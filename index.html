@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.3.2/dist/chart.min.js"></script>
+    <title>test</title>
+</head>
+
+<body>
+    <button onclick="chartUpdate(0)">Alle Treibhausgase</button>
+    <button onclick="chartUpdate(1)">CO2</button>
+    <button onclick="chartUpdate(2)">N2O</button>
+    <button onclick="chartUpdate(3)">CH4</button>
+    <canvas id="myChart" width="900" height="400"></canvas>
+    <script>
+
+        /*
+        Info: 
+        All Greenhouse gases: todos0
+        CO2: todos1
+        CH4: todos2
+        N2O: todos3
+        */
+
+        //Graph ist anfangs ohne Daten aber wird direkt initialisiert
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Emission",
+                    data: [],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(0, 102, 0, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Emissionen der EU (mit GB) nach Sektoren in 2019', font: { size: 20 }
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Tonnen in CO2-Äquivalent',
+                            font: { size: 30 }
+                        },
+                        beginAtZero: true
+                    }
+                }
+
+            }
+        });
+
+        //Fkt. übergibt den Parameter an desp() und updatet den Chart mit den entsprechenden Rückgaben. 
+        async function chartUpdate(routeNr) {
+            const chartData = await desp(routeNr);
+
+            myChart.data.datasets[0].data = chartData.dates_pop;
+            myChart.data.labels = chartData.labels;
+            myChart.update();   //Die magische Update-Funktion aus der Bibliothek!
+        }
+
+        //Initialisiert den leeren Chart am Anfang mit "all greenhousegases"
+        chartUpdate(0);
+
+        //je nach Parameter wird die entsprechende SQL-Abfrage im Server angesprochen
+        async function desp(param) {
+
+            const labels = [];
+            const dates_pop = [];
+
+            const dates = await fetch('http://localhost:3000/todos' + param, { method: 'GET' });
+            const result = await dates.json()
+                .then(function (obj) {
+                    obj.forEach(element => {
+                        labels.push(element.sektor_id)
+                        dates_pop.push(element.emission)
+                    });
+                    console.log(labels)
+                    console.log(dates_pop)
+                })
+            return { labels, dates_pop };
+        }
+
+    </script>
+
+</body>
+
+</html>
